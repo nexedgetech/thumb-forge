@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexEdge Thumbnail Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #080810;
+  --surface: #0f0f1a;
+  --surface2: #171726;
+  --border: #252538;
+  --border-hi: #3a3a58;
+  --accent: #ff4500;
+  --accent2: #00cfff;
+  --text: #eeeef8;
+  --muted: #5a5a7a;
+  --green: #00ff88;
+  --radius: 10px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 14px 80px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+.logo-icon {
+  width: 40px; height: 40px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; color: #fff; letter-spacing: 1px;
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px; letter-spacing: 5px;
+  background: linear-gradient(100deg, #ff4500, #ff8c00 40%, #00cfff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; line-height: 1;
+}
+.tagline { font-size: 9px; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; }
+
+.app-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 18px;
+  width: 100%;
+  max-width: 1160px;
+  align-items: start;
+}
+@media (max-width: 780px) { .app-grid { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.section-label {
+  font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::before {
+  content: ''; width: 3px; height: 12px;
+  background: var(--accent); border-radius: 2px; flex-shrink: 0;
+}
+
+/* PHOTO */
+.photo-section { margin-bottom: 18px; }
+.photo-preview-wrap {
+  position: relative; margin-bottom: 10px;
+  display: none; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border-hi);
+}
+.photo-preview-wrap.show { display: block; }
+.photo-preview-wrap img { width: 100%; max-height: 180px; object-fit: cover; display: block; }
+.photo-overlay-btns {
+  position: absolute; bottom: 8px; right: 8px;
+  display: flex; gap: 6px;
+}
+#photoInput { display: none; }
+
+.tap-upload-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 16px;
+  background: var(--surface2);
+  border: 2px dashed var(--border-hi);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+.tap-upload-btn:active { background: rgba(0,207,255,0.06); border-color: var(--accent2); }
+
+.icon-btn {
+  padding: 6px 12px; border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  cursor: pointer; border: none; letter-spacing: 0.5px;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn.change { background: rgba(0,207,255,0.2); color: var(--accent2); }
+.icon-btn.remove { background: rgba(255,69,0,0.2); color: var(--accent); }
+
+/* FIELDS */
+.field { margin-bottom: 12px; }
+.field label {
+  display: block; font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 5px;
+}
+.field input, .field textarea {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 7px;
+  color: var(--text); font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; padding: 10px 12px; outline: none;
+  transition: border-color 0.2s; resize: none; -webkit-appearance: none;
+}
+.field input:focus, .field textarea:focus { border-color: var(--accent2); }
+.field textarea { height: 62px; }
+
+/* PILLS */
+.style-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+.pill {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  padding: 6px 13px; cursor: pointer; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.pill.active { border-color: var(--accent); color: var(--accent); background: rgba(255,69,0,0.1); }
+
+/* POSITION */
+.pos-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 18px; }
+.pos-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 7px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  padding: 10px 4px; cursor: pointer; text-align: center; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.pos-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(0,207,255,0.08); }
+
+/* GENERATE */
+.gen-btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--accent), #ff7a00);
+  border: none; border-radius: 8px; color: #fff;
+  font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 4px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: opacity 0.15s;
+}
+.gen-btn:active { opacity: 0.8; }
+.gen-btn:disabled { background: var(--surface2); color: var(--muted); }
+
+.status-bar {
+  margin-top: 10px; font-size: 10px; letter-spacing: 1px;
+  text-align: center; min-height: 16px; color: var(--muted);
+}
+.status-bar.loading { color: var(--accent2); animation: blink 1s ease-in-out infinite; }
+.status-bar.done { color: var(--green); }
+.status-bar.error { color: var(--accent); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* PREVIEW */
+.right-panel { display: flex; flex-direction: column; gap: 14px; }
+.canvas-wrap {
+  position: relative; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; aspect-ratio: 16/9;
+}
+#thumbCanvas { width: 100%; height: 100%; display: block; }
+.canvas-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; pointer-events: none;
+}
+.canvas-placeholder .big { font-family: 'Bebas Neue'; font-size: 42px; letter-spacing: 5px; color: var(--border-hi); }
+.canvas-placeholder .small { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; text-align: center; padding: 0 20px; }
+.canvas-wrap.generating::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(0,207,255,0.07), transparent);
+  animation: shimmer 1.1s linear infinite;
+}
+@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+
+.brief-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2); border-radius: var(--radius);
+  padding: 12px 14px; font-size: 11px; color: var(--muted);
+  line-height: 1.8; display: none;
+}
+.brief-box.show { display: block; }
+.brief-box strong { color: var(--accent2); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; display: block; margin-bottom: 5px; }
+
+.action-row { display: flex; gap: 8px; }
+.action-btn {
+  flex: 1; padding: 12px 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.action-btn.primary { border-color: var(--accent2); color: var(--accent2); }
+
+hr.sep { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <div class="logo-icon">NX</div>
+    <div class="logo">THUMB FORGE</div>
+  </div>
+  <p class="tagline">Upload · AI Design · Download</p>
+</header>
+
+<div class="app-grid">
+
+  <div class="panel">
+
+    <div class="section-label">Your Photo</div>
+    <div class="photo-section">
+      <!-- Hidden input — triggered by button tap -->
+      <input type="file" id="photoInput" accept="image/*">
+
+      <!-- Preview shown after upload -->
+      <div class="photo-preview-wrap" id="previewWrap">
+        <img id="photoPreview" alt="Your photo">
+        <div class="photo-overlay-btns">
+          <button class="icon-btn change" onclick="triggerUpload()">Change</button>
+          <button class="icon-btn remove" onclick="removePhoto()">Remove</button>
+        </div>
+      </div>
+
+      <!-- Tap button (visible when no photo loaded) -->
+      <button class="tap-upload-btn" id="uploadBtn" onclick="triggerUpload()">
+        <span style="font-size:22px">📸</span>
+        <span>Tap to choose photo</span>
+      </button>
+    </div>
+
+    <hr class="sep">
+    <div class="section-label">Video Details</div>
+
+    <div class="field">
+      <label>Video Topic / Title</label>
+      <input type="text" id="topic" placeholder="e.g. Best Budget PC Build Under $500">
+    </div>
+    <div class="field">
+      <label>Hook or Callout (optional)</label>
+      <textarea id="hook" placeholder="e.g. I saved $300 using Micro Center bundles"></textarea>
+    </div>
+
+    <hr class="sep">
+    <div class="section-label">Style</div>
+    <div class="style-pills">
+      <div class="pill active" data-style="dark-tech">⚡ Dark Tech</div>
+      <div class="pill" data-style="hype">🔥 Hype</div>
+      <div class="pill" data-style="clean">✦ Clean</div>
+      <div class="pill" data-style="bold">💥 Bold</div>
+      <div class="pill" data-style="retro">📼 Retro</div>
+      <div class="pill" data-style="minimal">◻ Minimal</div>
+    </div>
+
+    <div class="section-label">Photo Position</div>
+    <div class="pos-grid">
+      <div class="pos-btn" data-pos="left">◧ Left</div>
+      <div class="pos-btn active" data-pos="center">⬛ Center</div>
+      <div class="pos-btn" data-pos="right">◨ Right</div>
+    </div>
+
+    <button class="gen-btn" id="genBtn" onclick="generate()">GENERATE THUMBNAIL</button>
+    <div class="status-bar" id="status"></div>
+  </div>
+
+  <div class="right-panel">
+    <div class="canvas-wrap" id="canvasWrap">
+      <div class="canvas-placeholder" id="placeholder">
+        <div class="big">1280 × 720</div>
+        <div class="small">Add a photo + enter your topic, then hit Generate</div>
+      </div>
+      <canvas id="thumbCanvas" width="1280" height="720"></canvas>
+    </div>
+
+    <div class="brief-box" id="briefBox">
+      <strong>Claude's Design Brief</strong>
+      <span id="briefText"></span>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn primary" id="dlBtn" onclick="downloadThumb()" disabled>⬇ Download</button>
+      <button class="action-btn" id="regenBtn" onclick="rerender()" disabled>↻ Re-render</button>
+      <button class="action-btn" id="newBtn" onclick="generate()" disabled>✦ New Design</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let selectedStyle = 'dark-tech';
+let selectedPos = 'center';
+let uploadedImage = null;
+let lastDesign = null;
+
+// Pill selection
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    selectedStyle = p.dataset.style;
+  });
+});
+
+// Position selection
+document.querySelectorAll('.pos-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.pos-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    selectedPos = b.dataset.pos;
+  });
+});
+
+// ---- UPLOAD ----
+function triggerUpload() {
+  document.getElementById('photoInput').click();
+}
+
+document.getElementById('photoInput').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      uploadedImage = img;
+      document.getElementById('photoPreview').src = ev.target.result;
+      document.getElementById('previewWrap').classList.add('show');
+      document.getElementById('uploadBtn').style.display = 'none';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function removePhoto() {
+  uploadedImage = null;
+  document.getElementById('photoPreview').src = '';
+  document.getElementById('previewWrap').classList.remove('show');
+  document.getElementById('uploadBtn').style.display = '';
+  document.getElementById('photoInput').value = '';
+}
+
+// ---- GENERATE ----
+async function generate() {
+  const topic = document.getElementById('topic').value.trim();
+  if (!topic) { setStatus('Enter a video topic first.', 'error'); return; }
+
+  setStatus('Asking Claude for a design brief...', 'loading');
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('canvasWrap').classList.add('generating');
+  document.getElementById('placeholder').style.display = 'none';
+
+  try {
+    const design = await getDesignBrief(topic);
+    lastDesign = design;
+    document.getElementById('briefText').textContent = design.brief_summary || '';
+    document.getElementById('briefBox').classList.add('show');
+    await renderThumb(design);
+    setStatus('Done — tap Download to save.', 'done');
+    document.getElementById('dlBtn').disabled = false;
+    document.getElementById('regenBtn').disabled = false;
+    document.getElementById('newBtn').disabled = false;
+  } catch(err) {
+    console.error(err);
+    setStatus('Error: ' + (err.message || 'Something went wrong.'), 'error');
+  }
+
+  document.getElementById('genBtn').disabled = false;
+  document.getElementById('canvasWrap').classList.remove('generating');
+}
+
+async function rerender() {
+  if (!lastDesign) return;
+  setStatus('Re-rendering...', 'loading');
+  await renderThumb(lastDesign);
+  setStatus('Done.', 'done');
+}
+
+// ---- CLAUDE API ----
+async function getDesignBrief(topic) {
+  const hook = document.getElementById('hook').value.trim();
+
+  const system = `You are a professional YouTube thumbnail art director. Output a JSON design brief for a 1280x720 thumbnail. Bold, high contrast, readable at small sizes. Respond ONLY with valid JSON — no markdown, no backticks, no explanation.`;
+
+  const user = `
+Video Topic: "${topic}"
+Hook/Callout: "${hook || 'none'}"
+Style Preset: "${selectedStyle}"
+Has Subject Photo: ${!!uploadedImage}
+Photo Position: "${selectedPos}"
+
+Return this exact JSON shape:
+{
+  "headline": "SHORT PUNCHY HEADLINE 2-5 words ALL CAPS",
+  "subline": "One supporting phrase or stat or null",
+  "accent_word": "ONE word from headline to highlight in accent color",
+  "badge_text": "Short callout badge like SAVE $300 or null",
+  "bg_color1": "#hexcolor",
+  "bg_color2": "#hexcolor",
+  "accent_color": "#hexcolor",
+  "text_color": "#hexcolor",
+  "text_side": "left or right",
+  "brief_summary": "One sentence describing the visual vibe"
+}
+
+Style palettes:
+- dark-tech: deep navy/black bg, cyan accent, white text
+- hype: near-black bg, hot orange or lime accent, white text
+- clean: white bg, bold black text, bright accent
+- bold: deep red bg, yellow accent, white text
+- retro: dark purple bg, warm orange accent, cream text
+- minimal: off-white bg, charcoal text, muted single accent
+
+Put text on the opposite side from the photo. badge_text null if no clear callout exists.
+`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system,
+      messages: [{ role: 'user', content: user }]
+    })
+  });
+
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  const raw = data.content.map(b => b.text || '').join('').replace(/```json|```/g,'').trim();
+  return JSON.parse(raw);
+}
+
+// ---- CANVAS RENDERER ----
+async function renderThumb(d) {
+  const canvas = document.getElementById('thumbCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = 1280, H = 720;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, d.bg_color1);
+  grad.addColorStop(1, d.bg_color2);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Diagonal lines texture
+  ctx.save();
+  ctx.strokeStyle = hexToRgba(d.accent_color, 0.06);
+  ctx.lineWidth = 1;
+  for (let i = -H; i < W + H; i += 55) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + H, H); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Radial glow on photo side
+  const glowX = d.text_side === 'left' ? W * 0.75 : W * 0.25;
+  const rg = ctx.createRadialGradient(glowX, H * 0.5, 0, glowX, H * 0.5, 500);
+  rg.addColorStop(0, hexToRgba(d.accent_color, 0.18));
+  rg.addColorStop(1, hexToRgba(d.accent_color, 0));
+  ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+
+  // Photo composited first
+  if (uploadedImage) drawPhoto(ctx, W, H, d);
+
+  // Dark gradient on text side for readability
+  const tl = d.text_side === 'left';
+  const ov = ctx.createLinearGradient(tl ? 0 : W, 0, tl ? W * 0.68 : W * 0.32, 0);
+  ov.addColorStop(0, hexToRgba(d.bg_color1, 0.93));
+  ov.addColorStop(1, hexToRgba(d.bg_color1, 0));
+  ctx.fillStyle = ov; ctx.fillRect(0, 0, W, H);
+
+  // Accent bars
+  ctx.fillStyle = d.accent_color;
+  ctx.fillRect(0, H - 10, W, 10);
+  ctx.fillStyle = hexToRgba(d.accent_color, 0.5);
+  ctx.fillRect(0, 0, W, 4);
+
+  // Vertical divider
+  const lx = tl ? W * 0.60 : W * 0.40;
+  const lg = ctx.createLinearGradient(lx, 0, lx, H);
+  lg.addColorStop(0, hexToRgba(d.accent_color, 0));
+  lg.addColorStop(0.3, hexToRgba(d.accent_color, 0.7));
+  lg.addColorStop(0.7, hexToRgba(d.accent_color, 0.7));
+  lg.addColorStop(1, hexToRgba(d.accent_color, 0));
+  ctx.fillStyle = lg; ctx.fillRect(lx, 0, 3, H);
+
+  drawText(ctx, W, H, d);
+}
+
+function drawPhoto(ctx, W, H, d) {
+  const img = uploadedImage;
+  let destX, destW;
+  if (selectedPos === 'left') { destX = 0; destW = W * 0.58; }
+  else if (selectedPos === 'right') { destX = W * 0.42; destW = W * 0.58; }
+  else { destX = 0; destW = W; }
+
+  const scaleX = destW / img.width;
+  const scaleY = H / img.height;
+  const scale = Math.max(scaleX, scaleY);
+  const sw = destW / scale;
+  const sh = H / scale;
+  const sx = (img.width - sw) / 2;
+  const sy = Math.max(0, (img.height - sh) * 0.3);
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(destX, 0, destW, H); ctx.clip();
+  ctx.drawImage(img, sx, sy, sw, sh, destX, 0, destW, H);
+  ctx.restore();
+}
+
+function drawText(ctx, W, H, d) {
+  const tl = d.text_side === 'left';
+  const textX = tl ? 70 : W - 70;
+  const maxW = W * 0.52;
+  ctx.textAlign = tl ? 'left' : 'right';
+  ctx.textBaseline = 'alphabetic';
+
+  const headline = (d.headline || 'YOUR TITLE').toUpperCase();
+  const accent = (d.accent_word || '').toUpperCase();
+  const words = headline.split(' ');
+
+  let fs = 165;
+  ctx.font = `900 ${fs}px 'Barlow Condensed', sans-serif`;
+  while (ctx.measureText(headline).width > maxW && fs > 60) {
+    fs -= 5; ctx.font = `900 ${fs}px 'Barlow Condensed', sans-serif`;
+  }
+
+  const hasSubline = d.subline && d.subline !== 'null' && d.subline.toLowerCase() !== 'none';
+  const hasBadge = d.badge_text && d.badge_text !== 'null' && d.badge_text.toLowerCase() !== 'null';
+  const headY = hasSubline ? H * 0.44 : H * 0.52;
+
+  ctx.shadowColor = 
